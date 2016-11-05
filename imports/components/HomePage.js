@@ -8,7 +8,7 @@ const HomePage = () => (
       <AccountsUIWrapper />
     </span>
     <div className='main-logo'>
-      LANGUAGE LABS
+      LANGUAGE.NEXT
     </div>
   </div>
 );

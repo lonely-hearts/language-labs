@@ -8,6 +8,7 @@ class TranslateTab extends React.Component {
     super(props);
     this.handleTranslateInput = this.handleTranslateInput.bind(this);
     this.translate = _.debounce(this.translate, 750);
+    this.handleLanguageChange = this.handleLanguageChange.bind(this);
     this.token = '';
     this.createToken();
   }
@@ -25,6 +26,10 @@ class TranslateTab extends React.Component {
 
   handleTranslateInput(e) {
     this.translate(e.currentTarget.value);
+  }
+
+  handleLanguageChange() {
+    this.translate(document.getElementById('inputText').value);
   }
 
   translate(text) {
@@ -46,15 +51,16 @@ class TranslateTab extends React.Component {
       <div id="Translate" className="translate-container tabcontent">
         <div className="translate-content-container">
           <div className="sourceTextContainer">
-            <LanguageSelector id="lang-selector-1" defaultValue="en" />
+            <LanguageSelector handleLanguageChange={this.handleLanguageChange} id="lang-selector-1" defaultValue="en" />
             <textarea
+              id="inputText"
               onChange={this.handleTranslateInput}
               placeholder="Enter text"
             />
           </div>
           <div className="divider" />
           <div className="targetTextContainer">
-            <LanguageSelector id="lang-selector-2" defaultValue="es" />
+            <LanguageSelector handleLanguageChange={this.handleLanguageChange} id="lang-selector-2" defaultValue="es" />
             <textarea
               readOnly id="targetText"
               placeholder="Translation"

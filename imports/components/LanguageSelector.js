@@ -1,7 +1,7 @@
 import React from 'react';
 
 const LanguageSelector = props => (
-  <select className="lang-sel" id={props.id} defaultValue={props.defaultValue}>
+  <select className="lang-sel" onChange={props.handleLanguageChange} id={props.id} defaultValue={props.defaultValue}>
     {
       [['af', 'Afrikaans'],
       ['ar', 'Arabic'],

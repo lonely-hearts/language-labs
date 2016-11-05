@@ -42,7 +42,7 @@ const RecordModal = ({ startRecording, toggleRecordModal, recordModalIsOpen }) =
       <p><input id='recordModalInput' style={ recordModalStyle }/></p>
       <div className='startCall' onClick={() => {
         var title = document.getElementById('recordModalInput').value
-        startRecording();
+        startRecording(title);
         toggleRecordModal();
       }}>
         <p>Start Recording</p>

@@ -3,9 +3,9 @@
 > A platform for connecting foreign language learners and facilitating conversations. 
 
 
-  - __Product Owner__: Travis Wood
-  - __Scrum Master__: Matthew Vincent
-  - __Development Team Members__: Frederic Renken, Travis Wood, Matthew Vincent
+  - __Product Owner__: Ben Hesseldieck
+  - __Scrum Master__: Cheney Mao
+  - __Development Team Members__: Robbie Gifford, Jace Zhu, Cheney Mao, Ben Hesseldieck
   
   
 ## Usage

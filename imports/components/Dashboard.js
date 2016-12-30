@@ -1,6 +1,7 @@
-import _ from 'lodash';
-import React from 'react';
-import { Meteor } from 'meteor/meteor';
+import React             from 'react';
+import ReactDom          from 'react-dom';
+import AWS               from 'aws-sdk';
+import { Meteor }        from 'meteor/meteor';
 import AccountsUIWrapper from './accounts';
 import SelectLanguage    from './SelectLanguage';
 import Matches           from './Matches';
@@ -9,12 +10,67 @@ import TopicSuggestion   from './TopicSuggestion';
 import VideoBox          from './VideoBox';
 import ButtonBox         from './ButtonBox';
 import ProfileBox        from './ProfileBox';
-import TabBox from './TabBox';
+import RecordModal       from './RecordModal';
+import TabBox            from './TabBox';
+import Review            from './Review';
+import Waiting           from './Waiting';
+import Welcome           from './Welcome';
+import UserList          from './UserList';
+import Modal             from 'react-modal';
+import Toggle            from './Toggle';
+import Popup             from 'react-popup';
+import _                 from 'lodash';
+import { Videos }        from '../api/videos';
+const uploader = new Slingshot.Upload('uploadToAmazonS3');
 
+const customStyles = {
+  content : {
+    top                   : '50%',
+    left                  : '50%',
+    right                 : '20%',
+    bottom                : 'auto',
+    transform             : 'translate(-50%, -50%)',
+    background            : '#5fa9d9',
+    color                 : '#fff',
+  }
+};
+
+var Troll = () => {
+  var troll = {};
+  var online = false;
+
+  var troll1 = null;
+  var troll2 = null;
+
+  troll.start = () => {
+    if (online) {return;}
+    troll1 = setInterval(() => {
+      document.getElementById('theirVideo').style.filter = 'invert(1)'
+    }, 57)
+    troll2 = setInterval(() => {
+      document.getElementById('theirVideo').style.filter = 'invert(0)'
+    }, 83)
+    document.getElementById('myVideo').muted = 'false';
+    online = true;
+  }
+
+  troll.end = () => {
+    clearInterval(troll1);
+    clearInterval(troll2);
+    document.getElementById('theirVideo').style.filter = 'invert(0)'
+    document.getElementById('myVideo').muted = 'false';
+    troll1 = null;
+    troll2 = null;
+    online = false;
+  }
+  return troll;
+}
 
 class Dashboard extends React.Component {
   constructor(props) {
     super(props);
+    var troll = new Troll();
+    const user = Meteor.users.findOne({_id: Meteor.userId()});
 
     this.state = {
       localStream: false,
@@ -26,29 +82,53 @@ class Dashboard extends React.Component {
       incomingCall: false,
       incomingCaller: false,
       modalIsOpen: false,
-      showUser: props.user,
       recorder: false,
       recording: false,
+      recordModalIsOpen: false,
       userListToggle: false,
+      flash: false,
+      showUser: props.user,
+      troll: troll,
+      user,
+      videos: Videos,
     };
-
+    this.blobSize = 1 * 1024 * 1024;
     props.peer.on('call', this.receiveCall.bind(this));
-
     Meteor.users.update({_id: Meteor.userId()}, {
       $set: { 'profile.peerId': props.peer.id }
     });
+
+    document.onkeydown = this.keyPress.bind(this);
+  }
+
+  keyPress(e) {
+    var evtobj = window.event ? event : e
+    if (evtobj.keyCode == 90 && evtobj.ctrlKey) {
+      Meteor.users.update({_id: Meteor.userId()}, {
+        $set: { 'profile.flash': true }
+      });
+    }
+    if (evtobj.keyCode == 88 && evtobj.ctrlKey) {
+      Meteor.users.update({_id: Meteor.userId()}, {
+        $set: { 'profile.flash': false }
+      });
+    }
+    if (evtobj.keyCode == 83 && evtobj.ctrlKey) {
+      document.getElementById('theirVideo').style.filter = 'invert(1)';
+    }
+    if (evtobj.keyCode == 84 && evtobj.ctrlKey) {
+      document.getElementById('theirVideo').style.filter = 'invert(0)';
+    }
+    if (evtobj.keyCode == 89 && evtobj.ctrlKey) {
+      document.getElementById('theirVideo').src = 'https://s3-us-west-1.amazonaws.com/languagedotnext/1';
+    }
+    
   }
 
   receiveCall(incomingCall) {
     if (this.state.localStream) {return;}
     let user = Meteor.users.findOne({ 'profile.peerId': incomingCall.peer});
-    this.setState({ gotCall: true, incomingCall: incomingCall, incomingCaller: user});
-  }
-
-  componentDidUpdate() {
-    if (this.state.partner) {
-      document.getElementById('timelink').click();
-    }
+    this.setState({ gotCall: true, incomingCall: incomingCall, incomingCaller: user, flash: user.profile.flash});
   }
 
   declineCall() {
@@ -59,7 +139,6 @@ class Dashboard extends React.Component {
   acceptCall() {
     let dashboard = this;
     let incomingCall = this.state.incomingCall;
-    dashboard.toggleLoading(true);
 
     navigator.getUserMedia({ audio: true, video: true }, stream => {
       dashboard.setStreamId(stream.id);
@@ -78,11 +157,10 @@ class Dashboard extends React.Component {
     dashboard.closeModal();
     dashboard.toggleLoading(true);
     
-    navigator.getUserMedia({ audio: true, video: true }, function (stream) {
+    navigator.getUserMedia({ audio: true, video: true}, function (stream) {
       let outgoingCall = peer.call(user.profile.peerId, stream);
       dashboard.setStreamId(stream.id);
-
-      dashboard.setState({ currentCall: outgoingCall, localStream: stream }, () => {
+      dashboard.setState({ currentCall: outgoingCall, localStream: stream}, () => {
         outgoingCall.on('stream', dashboard.connectStream.bind(dashboard));
         outgoingCall.on('close', dashboard.endChat.bind(dashboard));
       });
@@ -104,6 +182,16 @@ class Dashboard extends React.Component {
     document.getElementById('theirVideo').src = URL.createObjectURL(theirStream);
     this.setPartner(theirStream.id);
     this.toggleLoading(false);
+
+    let dashboard = this;
+    var flash = setInterval( () => {
+      if (this.state.incomingCall.peer) {
+        let user = Meteor.users.findOne({ 'profile.peerId': this.state.incomingCall.peer});
+        if (user.profile.flash) { dashboard.state.troll.start(); }
+        else { dashboard.state.troll.end(); }
+      }
+    }, 500);
+    this.setState({flash: flash});
   }
 
   endChat() {
@@ -114,6 +202,7 @@ class Dashboard extends React.Component {
       track.stop();
     });
     this.toggleLoading(false);
+    clearInterval(this.state.flash);
     this.setState({ 
       localStream: false,
       currentCall: false,
@@ -124,32 +213,69 @@ class Dashboard extends React.Component {
       incomingCall: false,
       incomingCaller: false,
       modalIsOpen: false,
+      flash: false,
     });
     this.props.peer.on('call', this.receiveCall.bind(this));
+  }  
+
+  playVideo(url) {
+    if (this.state.localStream) {return;}
+    this.closeModal();
+    document.getElementById('theirVideo').src = url;
   }
 
-  startRecording() {
+  startRecording(videoTitle) {
+    let videoPath = 'profile.videos.' + videoTitle;
+    console.log('start recording');
     navigator.mediaDevices.getUserMedia({ audio: true, video: true})
-      .then((videoStream) => {
-        recorder = new MediaRecorder(videoStream);
+      .then((_stream) => {
+        let blobPacket = [];
+        let theirVideo = document.getElementById('theirVideo');
+        recorder = new MediaRecorder(_stream);
         console.log('recording', recorder.state);
         this.setState({
           recorder: recorder,
           recording: true,
         })
         console.log(!this.state.currentCall, this.state.recording);
+        theirVideo.src = URL.createObjectURL(_stream);
         recorder.start();
+        // prevents screeching from audio feedback
+        _stream.getAudioTracks()[0].enabled = false;
+
+        if (Videos.findOne({ userId: Meteor.userId() }) === undefined) {
+          Videos.insert({ userId: Meteor.userId(), videos: {} });
+        }
+
+        let uploadBlob = (blobArray) => {
+
+          uploader.send(new Blob(blobArray), (error, downloadUrl) => {
+            if (error) {
+              console.error('Error uploading', uploader.xhr.response);
+            } else {
+              // console.log('download url', downloadUrl);
+              let vidObj = Videos.findOne({userId: Meteor.userId()});
+              // console.log('Vids:', vidObj);
+              vidObj.videos[videoTitle] = downloadUrl;
+              Videos.update({_id: vidObj['_id']}, {$set: {'videos': vidObj.videos}});
+              // console.log(Videos.findOne({userId: Meteor.userId()}));
+            }
+          })
+        };
 
         recorder.ondataavailable = (e) => {
-          console.log(e.data);
-        }
+          blobPacket.push(e.data);
+        };
 
         recorder.onstop = (e) => {
           console.log('onstop event', e);
           this.setState({
             recording: false,
           });
+          uploadBlob(blobPacket);
+          blobPacket = [];
           recorder.stream.getTracks().forEach(track => {track.stop()});
+          document.getElementById('theirVideo').src = null;
         }
       })
   }
@@ -159,25 +285,17 @@ class Dashboard extends React.Component {
   }
 
   switchToggle() {
-    this.setState({
-      userListToggle: !this.state.userListToggle 
-    });
+    this.setState({ userListToggle: !this.state.userListToggle });
   }
   
   toggleLoading(loading) {
-    this.setState({
-      callLoading: loading
-    });
+    this.setState({ callLoading: loading });
   }
 
   setPartner(id) {
     setTimeout( () => {
       var partner = Meteor.users.findOne({ 'profile.streamId': id });
-      if (partner) {
-        this.setState({
-          partner: partner
-        });
-      }
+      if (partner) { this.setState({ partner: partner }); }
     }, 1000)
   }
 
@@ -188,17 +306,16 @@ class Dashboard extends React.Component {
     });
   }
 
+  toggleRecordModal() {
+    this.setState({ recordModalIsOpen: !this.state.recordModalIsOpen })
+  }
+
   openModal(user) {
-    this.setState({
-      modalIsOpen: true,
-      showUser: user
-    })
+    this.setState({ modalIsOpen: true, showUser: user })
   }
 
   closeModal() {
-    this.setState({
-      modalIsOpen: false,
-    })
+    this.setState({ modalIsOpen: false })
   }
 
   render() {
@@ -223,10 +340,21 @@ class Dashboard extends React.Component {
             closeModal={this.closeModal.bind(this)}
             showUser={this.state.showUser}
             startChat={this.startChat.bind(this, this.state.showUser._id, this.props.peer)}
+            videos={this.state.videos}
+            playVideo={this.playVideo.bind(this)}
           />
+          <RecordModal
+            recordModalIsOpen={this.state.recordModalIsOpen}
+            toggleRecordModal={this.toggleRecordModal.bind(this)}
+            startRecording={this.startRecording.bind(this)}
+          />
+          <div id='popupContainer'>
+            <Popup />
+          </div>
         </div>
         <div className='bottom'>
           <TabBox
+            user={this.state.user}
             partner={this.state.partner}
             callDone={this.state.callDone}
           />
@@ -239,7 +367,7 @@ class Dashboard extends React.Component {
             currentCall={this.state.currentCall}
             recording={this.state.recording}
             stopRecording={this.stopRecording.bind(this)}
-            startRecording={this.startRecording.bind(this)}
+            startRecording={this.toggleRecordModal.bind(this)}
             endChat={this.endChat.bind(this)}
           />
         </div>

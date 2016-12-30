@@ -1,15 +1,8 @@
 import React from 'react';
-// import MsTranslator from 'mstranslator';
-import _ from 'lodash';
+import { Meteor } from 'meteor/meteor';
 import TranslateTab from './TranslateTab';
 import ChatTab from './ChatTab';
 import TopicSuggestion from './TopicSuggestion';
-// import keys from '../../config/config';
-
-// const client = new MsTranslator({
-//   client_id: keys.client_id,
-//   client_secret: keys.client_secret,
-// }, true);
 
 const changeTab = (evt) => {
   const tabcontent = document.getElementsByClassName('tabcontent');
@@ -22,48 +15,40 @@ const changeTab = (evt) => {
     tablinks[i].className = tablinks[i].className.replace(' active', '');
   }
 
-  document.getElementById(evt.currentTarget.text).style.display = 'flex';
+  document.getElementById(evt.currentTarget.textContent).style.display = 'flex';
   evt.currentTarget.className += ' active';
+
+  return false;
 };
 
 class TabBox extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleTranslateInput = this.handleTranslateInput.bind(this);
-    this.translate = _.debounce(this.translate, 200);
-  }
-
-  handleTranslateInput(e) {
-    this.translate(e.currentTarget.value);
-  }
-
-  translate(text) {
-    const params = {
-      text,
-      from: 'en',
-      to: 'es',
-    };
+  componentDidUpdate() {
+    if (this.props.partner) {
+      document.getElementById('chatlink').click();
+    }
   }
 
   render() {
     return (
       <div className="text-box">
         {
+            // <TopicSuggestion partner={this.props.partner}/>
             // <Clock partner={this.props.partner} callDone={this.props.callDone} />
           this.props.partner &&
           <div className="text-box-content">
             <ul className="tab">
-              <li><a href="javascript:void(0)" id="timelink" className="tablinks" onClick={changeTab}>Time</a></li>
-              <li><a href="javascript:void(0)" className="tablinks" onClick={changeTab}>Chat</a></li>
-              <li><a href="javascript:void(0)" className="tablinks" onClick={changeTab}>Translate</a></li>
+              <li><button id="chatlink" className="tablinks" onClick={changeTab}>
+                Chat
+              </button></li>
+              <li><button className="tablinks" onClick={changeTab}>
+                Translate
+              </button></li>
             </ul>
-            <div id="Time" className="tabcontent">
-              <div className="clock-suggestion-wrapper">
-                <TopicSuggestion partner={this.props.partner}/>
-              </div>
-            </div>
-            <ChatTab />
-            <TranslateTab handleTranslateInput={this.handleTranslateInput} />
+            <ChatTab
+              user={this.props.user}
+              partner={this.props.partner}
+            />
+            <TranslateTab />
           </div>
         }
         {

@@ -4,9 +4,9 @@
 
 ## Team
 
-  - __Product Owner__: Robbie Gifford
-  - __Scrum Master__: Jace Zhu
-  - __Development Team Members__: Ben Hesseldieck, Cheney Mao
+  - __Product Owner__: Ben Hesseldieck
+  - __Scrum Master__: Cheney Mao
+  - __Development Team Members__: Robbie Gifford, Jace Zhu, Cheney Mao, Ben Hesseldieck
 
 ## Table of Contents
 

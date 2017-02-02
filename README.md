@@ -2,6 +2,11 @@
 
 > A platform for connecting foreign language learners and facilitating conversations. 
 
+![Home](/project_images/language-labs_home.png "Home")
+![Chat](/project_images/language-labs_chat.png "Chat")
+![Translate](/project_images/language-labs_translate.png "Translate")
+![Review](/project_images/language-labs_review.png "Review")
+
 ## Team
 
   - __Product Owner__: Ben Hesseldieck
@@ -10,11 +15,11 @@
 
 ## Table of Contents
 
-1. [Usage](#Usage)
+1. [Usage](#usage)
 2. [Requirements](#requirements)
 3. [Development](#development)
   1. [Installing Dependencies](#installing-dependencies)
-  2. [Tasks](#tasks)
+  2. [Roadmap](#roadmap)
 
 ## Usage
 
@@ -37,3 +42,7 @@ From within the root directory:
 ```sh
 meteor
 ```
+
+### Roadmap
+
+View the project roadmap [here](https://github.com/lonely-hearts/language-labs/issues)
